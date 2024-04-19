@@ -2,35 +2,36 @@ import tkinter as tk
 from tkinter import messagebox
 import json
 
-def add_password():
-    website = website_entry.get()
+def add_account():
+    account = account_entry.get()
     username = username_entry.get()
     password = password_entry.get()
-    if website and username and password:
-        # If the website already exists, ask the user if they want to update the password
-        if website in passwords:
-            response = messagebox.askyesno("Update Password", "A password for this website already exists. Do you want to update it?")
+    if account and username and password:
+        # If the account already exists, ask the user if they want to update the password
+        if account in passwords:
+            response = messagebox.askyesno("Update Password", "An account with this name already exists. Do you want to update it?")
             if response:
-                passwords[website] = {"username": username, "password": password}
+                passwords[account] = {"username": username, "password": password}
                 save_passwords()
                 messagebox.showinfo("Success", "Password updated successfully!")
             else:
                 messagebox.showinfo("Information", "Password not updated.")
         else:
-            passwords[website] = {"username": username, "password": password}
+            passwords[account] = {"username": username, "password": password}
             save_passwords()
             messagebox.showinfo("Success", "Password added successfully!")
+            update_account_list()
     else:
         messagebox.showerror("Error", "Please fill in all fields.")
 
 def get_password():
-    website = website_entry.get()
-    if website in passwords:
-        username = passwords[website]["username"]
-        password = passwords[website]["password"]
+    account = account_entry.get()
+    if account in passwords:
+        username = passwords[account]["username"]
+        password = passwords[account]["password"]
         messagebox.showinfo("Password Details", f"Username: {username}\nPassword: {password}")
     else:
-        messagebox.showerror("Error", "Website not found in passwords!")
+        messagebox.showerror("Error", "Account not found in passwords!")
 
 def save_passwords():
     with open("passwords.json", "w") as file:
@@ -43,37 +44,80 @@ def load_passwords():
     except FileNotFoundError:
         return {}
 
+def reset_data():
+    response = messagebox.askyesno("Reset Data", "Are you sure you want to reset all data?")
+    if response:
+        passwords.clear()
+        save_passwords()
+        messagebox.showinfo("Success", "All data reset successfully!")
+        update_account_list()
+    else:
+        messagebox.showinfo("Information", "Operation cancelled.")
+
+def update_account_list():
+    account_listbox.delete(0, tk.END)
+    for account in passwords.keys():
+        account_listbox.insert(tk.END, account)
+
+def delete_account():
+    selection = account_listbox.curselection()
+    if selection:
+        account = account_listbox.get(selection)
+        response = messagebox.askyesno("Delete Account", f"Are you sure you want to delete {account}?")
+        if response:
+            del passwords[account]
+            save_passwords()
+            update_account_list()
+            messagebox.showinfo("Success", f"{account} deleted successfully!")
+    else:
+        messagebox.showerror("Error", "Please select an account to delete.")
+
 passwords = load_passwords()
 
 root = tk.Tk()
 root.title("Password Manager")
 
-website_label = tk.Label(root, text="Website:")
-website_label.grid(row=0, column=0, padx=5, pady=5)
-website_entry = tk.Entry(root)
-website_entry.grid(row=0, column=1, padx=5, pady=5)
+# Create content frame to contain the widgets
+content_frame = tk.Frame(root, bg="#f0f0f0")
 
-username_label = tk.Label(root, text="Username:")
+# Create labels and entries for account, username, and password
+account_label = tk.Label(content_frame, text="Account:", bg="#f0f0f0", fg="blue")
+account_label.grid(row=0, column=0, padx=5, pady=5)
+account_entry = tk.Entry(content_frame)
+account_entry.grid(row=0, column=1, padx=5, pady=5)
+
+username_label = tk.Label(content_frame, text="Username:", bg="#f0f0f0", fg="blue")
 username_label.grid(row=1, column=0, padx=5, pady=5)
-username_entry = tk.Entry(root)
+username_entry = tk.Entry(content_frame)
 username_entry.grid(row=1, column=1, padx=5, pady=5)
 
-password_label = tk.Label(root, text="Password:")
+password_label = tk.Label(content_frame, text="Password:", bg="#f0f0f0", fg="blue")
 password_label.grid(row=2, column=0, padx=5, pady=5)
-password_entry = tk.Entry(root, show="*")
+password_entry = tk.Entry(content_frame, show="*")
 password_entry.grid(row=2, column=1, padx=5, pady=5)
 
-add_button = tk.Button(root, text="Add/Update Password", command=add_password)
+# Create buttons for adding/updating passwords, retrieving passwords, and resetting data
+add_button = tk.Button(content_frame, text="Add/Update Password", command=add_account, bg="green", fg="white")
 add_button.grid(row=3, column=0, columnspan=2, padx=5, pady=5, sticky="WE")
 
-get_button = tk.Button(root, text="Get Password", command=get_password)
+get_button = tk.Button(content_frame, text="Get Password", command=get_password, bg="orange", fg="white")
 get_button.grid(row=4, column=0, columnspan=2, padx=5, pady=5, sticky="WE")
 
-# Center the window
-window_width = root.winfo_reqwidth()
-window_height = root.winfo_reqheight()
-position_right = int(root.winfo_screenwidth() / 2 - window_width / 2)
-position_down = int(root.winfo_screenheight() / 2 - window_height / 2)
-root.geometry("+{}+{}".format(position_right, position_down))
+reset_button = tk.Button(content_frame, text="Reset Data", command=reset_data, bg="red", fg="white")
+reset_button.grid(row=5, column=0, columnspan=2, padx=5, pady=5, sticky="WE")
+
+# Create a listbox to display the list of accounts
+account_listbox = tk.Listbox(content_frame)
+account_listbox.grid(row=6, column=0, columnspan=2, padx=5, pady=5, sticky="WE")
+
+# Create a button to delete selected account
+delete_button = tk.Button(content_frame, text="Delete Account", command=delete_account, bg="gray", fg="white")
+delete_button.grid(row=7, column=0, columnspan=2, padx=5, pady=5, sticky="WE")
+
+# Pack the content frame to fill the available space
+content_frame.pack(expand=True, fill=tk.BOTH)
+
+# Update the account list when the app starts
+update_account_list()
 
 root.mainloop()
